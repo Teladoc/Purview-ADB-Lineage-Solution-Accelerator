@@ -3,11 +3,14 @@ using System.Threading.Tasks;
 using Function.Domain.Models.OL;
 using Function.Domain.Models.Purview;
 using Function.Domain.Models.Adb;
-using Function.Domain.Models.Settings;
 using Newtonsoft.Json;
 using Function.Domain.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.FeatureManagement;
+using System.Text;
+using Function.Domain.Constants;
+using Function.Domain.Helpers.Parsers.Synapse;
 
 namespace Function.Domain.Services
 {
@@ -20,18 +23,22 @@ namespace Function.Domain.Services
         private ILoggerFactory _loggerFactory;
         const string PREFIX = "{\"entities\": [";
         const string SUFFIX = "]}";
-        private IConfiguration _config;
+        private readonly IConfiguration _config;
+        private readonly IFeatureManager _featureManager;
+        private readonly ISynapseToPurviewParserFactory _synapseToPurviewParserFactory;
 
         /// <summary>
         /// Constructs the OlToPurviewParsingService from the Function framework using DI
         /// </summary>
         /// <param name="loggerFactory">Logger Factory to support DI from function framework or code calling helper classes</param>
         /// <param name="config">Function framework config from DI</param>
-        public OlToPurviewParsingService(ILoggerFactory loggerFactory, IConfiguration config)
+        public OlToPurviewParsingService(ILoggerFactory loggerFactory, IConfiguration config, IFeatureManager featureManager, ISynapseToPurviewParserFactory synapseToPurviewParserFactory)
         {
             _logger = loggerFactory.CreateLogger<OlToPurviewParsingService>();
             _loggerFactory = loggerFactory;
             _config = config;
+            _featureManager = featureManager;
+            _synapseToPurviewParserFactory = synapseToPurviewParserFactory ?? throw new ArgumentNullException(nameof(synapseToPurviewParserFactory));
         }
         
         /// <summary>
@@ -63,6 +70,53 @@ namespace Function.Domain.Services
             }
         }
 
+        public async Task<string?> GetParentEntityAsync(EnrichedSynapseEvent eventData)
+        {
+            if (eventData == null)
+            {
+                return null;
+            }
+
+            // Parse           
+            var parser = _synapseToPurviewParserFactory.Create(eventData);
+            SynapseWorkspace synapseWorkspace = parser.GetSynapseWorkspace();
+            SynapseNotebook synapseNotebook = parser.GetSynapseNotebook(synapseWorkspace.Attributes.QualifiedName);
+                    
+            // Build entity JSON to return
+            StringBuilder entityJsonBuilder = new();
+            entityJsonBuilder.Append(PREFIX);
+
+            // Append Workspace asset if feature is enabled
+            if (await _featureManager.IsEnabledAsync(FeatureFlags.CreateOrUpdateSynapseAsset))
+            {
+                var synapseWorkspaceStr = JsonConvert.SerializeObject(synapseWorkspace);
+                entityJsonBuilder.Append(synapseWorkspaceStr);
+                entityJsonBuilder.Append(',');
+            }
+
+            var synapseNotebookStr = JsonConvert.SerializeObject(synapseNotebook);
+            entityJsonBuilder.Append(synapseNotebookStr);
+            entityJsonBuilder.Append(SUFFIX);
+
+            return entityJsonBuilder.ToString();
+        }
+
+        public async Task<string?> GetChildEntityAsync(EnrichedSynapseEvent eventData)
+        {
+            if (eventData == null)
+            {
+                return null;
+            }
+
+            var parser = _synapseToPurviewParserFactory.Create(eventData);
+            SynapseWorkspace synapseWorkspace = parser.GetSynapseWorkspace();
+            SynapseNotebook synapseNotebook = parser.GetSynapseNotebook(synapseWorkspace.Attributes.QualifiedName);            
+            SynapseProcess synapseProcess = await parser.GetSynapseProcessAsync(synapseNotebook.Attributes.QualifiedName, synapseNotebook);
+
+            var synapseProcessStr = JsonConvert.SerializeObject(synapseProcess);
+            return $"{PREFIX}{synapseProcessStr}{SUFFIX}";
+        }
+        
         private string ParseInteractiveNotebook(IDatabricksToPurviewParser parser)
         {
             var databricksWorkspace = parser.GetDatabricksWorkspace();
