@@ -35,7 +35,7 @@ jobs:
 
     build:
       name: "Build"
-      runs-on: vm-udf-dmz-caf-dv-eu2-02
+      runs-on: vm-udf-dmz-caf-dv-eu2-1
       environment: 
         name: dev
       steps:             
