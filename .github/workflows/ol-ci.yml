@@ -1,0 +1,134 @@
+name: OpenLineage Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.cs'
+      - '**.csproj'
+      - 'tests/integration/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.cs'
+      - '**.csproj'
+      - 'tests/integration/**'
+
+env:
+  DOTNET_VERSION: '8.x.x'
+  REPO: "function-app/adb-to-purview/src/"
+  TEST: "function-app/adb-to-purview/tests/unit-tests"  
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '${{ github.workspace }}/function-app/adb-to-purview/src/'
+  AZURE_FUNCTIONAPP_TEST_PATH: '${{ github.workspace }}/function-app/adb-to-purview/tests/unit-tests'
+  BUILD_OUTPUT_PATH: '${{ github.workspace }}/build-artifacts'
+  PUBLISH_OUTPUT_PATH: '${{ github.workspace }}/publish-artifacts'
+  BUILD_PACKAGE_NAME: 'az-func.zip'
+  BUILD_CONFIGURATION: 'Release'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+    ############################################################################
+
+    build:
+      runs-on: vm-udf-dmz-caf-dv-eu2-02
+      environment: 
+        name: dev
+      steps:             
+        - name: 'Checking out source code ...'
+          uses: actions/checkout@v3
+        - name: 'Setup .NET Environment'
+          uses: actions/setup-dotnet@v1
+          with:
+            dotnet-version: ${{ env.DOTNET_VERSION }}      
+        - name: Install dependencies
+          run: dotnet restore ${{ env.REPO }}          
+        - name: Build
+          run: dotnet build ${{ env.REPO }} -c ${{ env.BUILD_CONFIGURATION }} --no-restore          
+        - name: Test
+          run:  dotnet test ${{ env.TEST }} -c ${{ env.BUILD_CONFIGURATION }}        
+        - name: 'Publish'
+          shell: bash
+          run: |
+            publishfolder="${{ env.PUBLISH_OUTPUT_PATH }}"
+            mkdir $publishfolder
+            cd $publishfolder
+            dotnet publish ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }} -c ${{ env.BUILD_CONFIGURATION }} --output .
+            mkdir ${{ env.BUILD_OUTPUT_PATH }}
+            zip -r ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }} .
+       
+        - name: 'Upload Function Zip Build Artifact'
+          uses: actions/upload-artifact@v3
+          with:
+            name: build_artifacts
+            path: ${{ env.BUILD_OUTPUT_PATH }}
+            if-no-files-found: error
+
+        - name: Create One Line OlToPurviewMappings
+          run: | 
+            mkdir ~/artifact-mappings
+            python ./deployment/util/mappings-remove-spaces.py ./deployment/infra/OlToPurviewMappings.json > ~/artifact-mappings/one-line-mappings.json
+            ls ~/artifact-mappings
+
+        - name: Upload One Line OlToPurviewMappings Build Artifact
+          uses: actions/upload-artifact@v3
+          with:
+            name: Mappings
+            path: ~/artifact-mappings/one-line-mappings.json            
+
+    ############################################################################
+
+    deployToDev:
+      needs: [build]
+      runs-on: vm-udf-dmz-caf-dv-eu2-02
+      environment: 
+        name: dev
+      env:
+        SECRET_STORE_NAME: ${{ vars.SECRET_STORE }}
+        SECRET_ENV_CODE: dev
+        # TODO : Change the below values per env using GitHub env vars
+        AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+      steps:
+        - name: 'Checking out source code ...'
+          uses: actions/checkout@v3
+        - name: Login with Contributor
+          uses: ./.github/actions/login-with-contributor
+          with:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+            SECRET_ENV_CODE: ${SECRET_ENV_CODE}
+            SECRET_STORE_NAME: ${SECRET_STORE_NAME}
+       
+        - name: 'Fetch Azure Functions Publishing Profile'
+          id: fncapp
+          uses: azure/powershell@v1
+          with:
+            inlineScript: |
+              $profile = ""
+              $profile = Get-AzWebAppPublishingProfile -ResourceGroupName $env:AZURE_RESOURCE_GROUP_NAME -Name $env:AZURE_FUNCTIONAPP_NAME
+              $profile = $profile.Replace("`r", "").Replace("`n", "")
+              Write-Output "::set-output name=pubprofile::$profile"
+              Remove-Variable profile
+            azPSVersion: "latest"
+
+        - name: 'Create Artifact Directory'          
+          run: |
+            mkdir ${{ env.BUILD_OUTPUT_PATH }}
+       
+        - name: 'Download Application Artifacts'
+          uses: actions/download-artifact@v2
+          with:
+            name: build_artifacts
+            path: ${{ env.BUILD_OUTPUT_PATH }}
+                   
+        - name: 'Deploy Application'
+          uses: azure/functions-action@v1.5.1
+          with:
+            app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+            package: ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }}
+            publish-profile: ${{ steps.fncapp.outputs.pubprofile }}
+            # TODO : Store as secret ${{ secrets.PUBLISH_PROFILE }}

@@ -1,0 +1,44 @@
+name: "Login with UDF Contributor"
+description: "Login with UDF Contributor"
+inputs:
+   AZURE_CLIENT_ID:
+     required: true
+     description: "AZURE_CLIENT_ID"
+   AZURE_TENANT_ID:
+     required: true
+     description: "AZURE_TENANT_ID"
+   AZURE_SUBSCRIPTION_ID:
+     required: true
+     description: "AZURE_SUBSCRIPTION_ID"
+   SECRET_ENV_CODE:
+     required: true
+     description: "SECRET_ENV_CODE" 
+   SECRET_STORE_NAME:
+     required: true
+     description: "SECRET_STORE_NAME"    
+runs:
+  using: "composite"
+  steps:
+    - name: Log into Azure (via OIDC) # Login with IAC SPN to get AKV Secrets for UDF Contributor
+      uses: azure/login@v1.5.0
+      with:
+        client-id: ${{ inputs.AZURE_CLIENT_ID }}
+        tenant-id: ${{ inputs.AZURE_TENANT_ID }}
+        subscription-id: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: true
+    - name: Get key vault secrets
+      shell: bash
+      id: fetch-secret
+      run: |
+        echo UDF_CONTRIBUTORS_CLIENT_ID=$(az keyvault secret show --name udf-${{inputs.SECRET_ENV_CODE}}-contributors-client-id --vault-name "${{inputs.SECRET_STORE_NAME}}" --query value -o tsv) >> $GITHUB_ENV
+        echo UDF_CONTRIBUTORS_CLIENT_SECRET=$(az keyvault secret show --name udf-${{inputs.SECRET_ENV_CODE}}-contributors-client-secret --vault-name "${{inputs.SECRET_STORE_NAME}}" --query value -o tsv) >> $GITHUB_ENV
+        echo UDF_CONTRIBUTORS_TENANT_ID=$(az keyvault secret show --name udf-${{inputs.SECRET_ENV_CODE}}-contributors-tenant-id --vault-name "${{inputs.SECRET_STORE_NAME}}" --query value -o tsv) >> $GITHUB_ENV    
+    - name: 'Log out from Azure (OIDC)'
+      shell: bash
+      run: |
+        az logout
+    - name: Log into Azure (Creds) # Login with UDF Contributor to deploy to Synapse
+      uses: azure/login@v1.5.0
+      with:
+        creds: '{"clientId":"${{ env.UDF_CONTRIBUTORS_CLIENT_ID }}","clientSecret":"${{ env.UDF_CONTRIBUTORS_CLIENT_SECRET }}","subscriptionId":"${{ inputs.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.UDF_CONTRIBUTORS_TENANT_ID }}"}'
+        enable-AzPSSession: true        
