@@ -33,7 +33,7 @@ defaults:
 permissions:
   id-token: write
   contents: read
-      
+
 jobs:
     ############################################################################
 
@@ -75,13 +75,14 @@ jobs:
         - name: Create One Line OlToPurviewMappings
           run: | 
             mkdir ${{ github.workspace }}/artifact-mappings
-            python ${{ github.workspace }}/deployment/util/mappings-remove-spaces.py ${{ github.workspace }}/deployment/infra/OlToPurviewMappings.json > ${{ github.workspace }}/artifact-mappings/one-line-mappings.json
+            python ${{ github.workspace }}/deployment/util/mappings-remove-spaces.py ${{ github.workspace }}/deployment/infra/OlToPurviewMappings.json > ${{ github.workspace }}/artifact-mappings/one-line-mappings.json            
+            sed -i -e 's/mysynapse/${{ vars.SYNAPSE_WORKSPACE_NAME }}/g' ${{ github.workspace }}/artifact-mappings/one-line-mappings.json
             ls ${{ github.workspace }}/artifact-mappings
 
         - name: Upload One Line OlToPurviewMappings Build Artifact
           uses: actions/upload-artifact@v3
           with:
-            name: Mappings
+            name: mappings
             path: ${{ github.workspace }}/artifact-mappings/one-line-mappings.json            
 
     ############################################################################
@@ -95,7 +96,6 @@ jobs:
       env:
         SECRET_STORE_NAME: ${{ vars.SECRET_STORE }}
         SECRET_ENV_CODE: dev
-        # TODO : Change the below values per env using GitHub env vars
         AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
         AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
       steps:
