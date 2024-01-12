@@ -1,0 +1,3 @@
+# template file might contain secrets
+template-parameters.json
+template-parameters-akv-secrets.json

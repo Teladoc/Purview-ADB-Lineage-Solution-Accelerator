@@ -1,0 +1,92 @@
+{
+  "entityDefs":[  
+    {
+        "category": "ENTITY",
+        "version": 1, 
+        "name": "azure_synapse_notebook",
+        "description": "azure_synapse_notebook",
+        "typeVersion": "1.0",
+        "serviceType": "Azure Synapse Analytics",
+        "options": {
+            "derivedLineageSources": "[\"processes\"]",
+            "purviewEntityExtDef": "{\"qualifiedNamePattern\":\"synapse://(?<Workspace>[^/]+)/authoring/analyze/notebooks/(?<Notebook>([^/]+/)*[^/]+)$\",\"qualifiedNameSample\":\"synapse://synapseworkspacename.dev.azuresynapse.net/authoring/analyze/notebooks/spark_lineage_copy1\",\"isContainer\":false,\"friendlyName\":\"Synapse notebook\",\"search\":{\"searchBehavior\":\"StandardSearch\",\"standardSearch\":{\"taxonomy\":{\"source\":\"QualifiedName\",\"assetTaxonomy\":[\"Workspace\"]},\"browse\":{\"source\":\"QualifiedName\",\"browseHierarchy\":[{\"entityTypeName\":\"azure_synapse_workspace\",\"isPath\":false,\"isRequired\":true,\"componentName\":\"Workspace\"},{\"entityTypeName\":\"azure_synapse_notebook\",\"isPath\":false,\"isRequired\":true,\"componentName\":\"Notebook\"}]}}}}"
+        },
+        "lastModifiedTS": "1",
+        "attributeDefs": [
+            {
+                "name": "sparkPoolName",
+                "typeName": "string",
+                "isOptional": true,
+                "cardinality": "SINGLE",
+                "valuesMinCount": 0,
+                "valuesMaxCount": 1,
+                "isUnique": false,
+                "isIndexable": false,
+                "includeInNotification": false
+            },
+            {
+                "name": "sourceCodeExplaination",
+                "typeName": "string",
+                "isOptional": true,
+                "cardinality": "SINGLE",
+                "valuesMinCount": 0,
+                "valuesMaxCount": 1,
+                "isUnique": false,
+                "isIndexable": false,
+                "includeInNotification": false
+            },
+            {
+                "name": "user",
+                "typeName": "string",
+                "isOptional": true,
+                "cardinality": "SINGLE",
+                "valuesMinCount": 0,
+                "valuesMaxCount": 1,
+                "isUnique": false,
+                "isIndexable": false,
+                "includeInNotification": false
+            },
+            {
+                "name": "sparkVersion",
+                "typeName": "string",
+                "isOptional": true,
+                "cardinality": "SINGLE",
+                "valuesMinCount": 0,
+                "valuesMaxCount": 1,
+                "isUnique": false,
+                "isIndexable": false,
+                "includeInNotification": false
+            }
+        ],
+        "superTypes": [
+            "Process"
+        ]
+    },
+    {
+        "category": "ENTITY",
+        "name": "azure_synapse_process",
+        "description": "azure_synapse_process",
+        "typeVersion": "1.0",
+        "serviceType": "Azure Synapse Analytics",
+        "options": {
+            "defaultRenderedLineage": "synapse_notebook"
+        },
+        "attributeDefs": [
+            {
+                "name": "columnMapping",
+                "typeName": "string",
+                "isOptional": true,
+                "cardinality": "SINGLE",
+                "valuesMinCount": 0,
+                "valuesMaxCount": 1,
+                "isUnique": false,
+                "isIndexable": false,
+                "includeInNotification": false
+            }
+        ],
+        "superTypes": [
+            "Process"
+        ]
+    }
+]
+}
