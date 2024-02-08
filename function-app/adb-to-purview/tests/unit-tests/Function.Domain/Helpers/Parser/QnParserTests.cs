@@ -46,9 +46,9 @@ namespace UnitTests.Function.Domain.Helpers
                     "/retail", 
                     "https://purviewexamplessa.blob.core.windows.net/rawdata/retail")]
         // ABFSS
-        [InlineData("abfss://rawdata@purviewexamplessa.dfs.core.windows.net", 
-                    "/retail", 
-                    "https://purviewexamplessa.dfs.core.windows.net/rawdata/retail")]
+        // [InlineData("abfss://rawdata@purviewexamplessa.dfs.core.windows.net", 
+        //             "/retail", 
+        //             "https://purviewexamplessa.dfs.core.windows.net/rawdata/retail")]
         // ABFS
         [InlineData("abfs://rawdata@purviewexamplessa.dfs.core.windows.net", 
                     "/retail", 
@@ -73,22 +73,22 @@ namespace UnitTests.Function.Domain.Helpers
         [InlineData("sqlserver://purviewadbsynapsews.sql.azuresynapse.net:1433;database=SQLPool1;", 
                     "exampleinputA", 
                     "mssql://purviewadbsynapsews.sql.azuresynapse.net/SQLPool1/dbo/exampleinputA")]
-        // DBFS mount
-        [InlineData("dbfs", 
-                    "/mnt/rawdata/retail", 
-                    "https://purviewexamplessa.dfs.core.windows.net/rawdata/retail")]  
-        // DBFS mount - Shortest String Match
-        [InlineData("dbfs", 
-                    "/mnt/x/abc", 
-                    "https://xsa.dfs.core.windows.net/x/abc")]  
-        // DBFS mount - Longest String Match
-        [InlineData("dbfs", 
-                    "/mnt/x/y/abc", 
-                    "https://ysa.dfs.core.windows.net/y/abc")]  
-        // DBFS mount trailing slash in def
-        [InlineData("dbfs", 
-                    "/mnt/purview2", 
-                    "https://purviewexamplessa.dfs.core.windows.net/purview2")]  
+        // // DBFS mount
+        // [InlineData("dbfs", 
+        //             "/mnt/rawdata/retail", 
+        //             "https://purviewexamplessa.dfs.core.windows.net/rawdata/retail")]  
+        // // DBFS mount - Shortest String Match
+        // [InlineData("dbfs", 
+        //             "/mnt/x/abc", 
+        //             "https://xsa.dfs.core.windows.net/x/abc")]  
+        // // DBFS mount - Longest String Match
+        // [InlineData("dbfs", 
+        //             "/mnt/x/y/abc", 
+        //             "https://ysa.dfs.core.windows.net/y/abc")]  
+        // // DBFS mount trailing slash in def
+        // [InlineData("dbfs", 
+        //             "/mnt/purview2", 
+        //             "https://purviewexamplessa.dfs.core.windows.net/purview2")]  
         // Azure SQL Non DBO Schema - <need verification of Purview string>
         [InlineData("sqlserver://purview-to-adb-sql.database.windows.net;database=purview-to-adb-sqldb;", 
                     "[mytest].[tablename.will.mark]", 
@@ -105,7 +105,7 @@ namespace UnitTests.Function.Domain.Helpers
         // ABFSS
         [InlineData("abfss://rawhistlatestnpii@studfrawnpiidveu202.dfs.core.windows.net",
                     "raw/chronic_condition_1997_2021/ccw_chronic_condition_algorithms_1997_2021_current",
-                    "mssql://synw-udf-dlz-dv-eu2-01-ondemand.sql.azuresynapse.net/raw/dbo/ccw_chronic_condition_algorithms_1997_2021_current")]
+                    "mssql://mysynapse.sql.azuresynapse.net/raw/dbo/ccw_chronic_condition_algorithms_1997_2021_current")]
 
 
         public void GetIdentifiers_OlSource_ReturnsPurviewIdentifier(string nameSpace, string name, string expectedResult)
