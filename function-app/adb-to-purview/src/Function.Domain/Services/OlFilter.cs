@@ -73,14 +73,12 @@ namespace Function.Domain.Services
             }
             catch (JsonSerializationException ex)
             {
-                _logger.LogWarning(ErrorCodes.OpenLineage.JsonSerialization, "Json Serialization Issue: {strEvent}, {ErrorMessage} , {path}", strEvent
-                , ex.Message, ex.Path);
+                _logger.LogWarning(ErrorCodes.OpenLineage.JsonSerialization, "Json Serialization Issue: {eventJson}, {errorMessage} , {errorPath}", strEvent , ex.Message, ex.Path ?? string.Empty);
             }
             // Parsing error
             catch (Exception ex)
             {
-                _logger.LogWarning(ErrorCodes.OpenLineage.ParseEvent, "Unrecognized Message: {strEvent}, {ErrorMessage}", strEvent
-            , ex.Message);
+                _logger.LogWarning(ErrorCodes.OpenLineage.ParseEvent, "Unrecognized Message: {eventJson}, {errorMessage}", strEvent , ex.Message);
             }
             return null;
         }
