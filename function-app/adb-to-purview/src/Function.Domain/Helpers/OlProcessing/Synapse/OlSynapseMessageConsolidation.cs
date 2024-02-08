@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Function.Domain.Helpers.Logging;
 using Function.Domain.Models.OL;
 using Function.Domain.Services;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,7 @@ namespace Function.Domain.Helpers
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, "OlSynapseMessageConsolidation-ConsolidateEventAsync: ErrorMessage {ErrorMessage} ", ex.Message);
+                _log.LogError(ex, ErrorCodes.PurviewOut.OlSynapseMessageConsolidation, "OlSynapseMessageConsolidation-ConsolidateEventAsync {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -50,11 +51,11 @@ namespace Function.Domain.Helpers
             // Parallelize input uploads
             inputUploadTasks.AddRange(olEvent.Inputs.Select(async (item) =>
             {
-                var inputJson = JsonConvert.SerializeObject(item);
                 string inputBlobName = prefixInput + GetUniqueHash(item.Name, item.NameSpace);
                 // Check if the blob already exists
                 if (!await _blobProvider.BlobExistsAsync(CONTAINER_NAME, inputBlobName))
                 {
+                    var inputJson = JsonConvert.SerializeObject(item);
                     return _blobProvider.UploadAsync(CONTAINER_NAME, inputBlobName, inputJson);
                 }
                 // If it already exists, return a completed task
@@ -64,11 +65,11 @@ namespace Function.Domain.Helpers
             // Parallelize output uploads
             outputUploadTasks.AddRange(olEvent.Outputs.Select(async (item) =>
             {
-                var outputJson = JsonConvert.SerializeObject(item);
                 string outputBlobName = prefixOutput + GetUniqueHash(item.Name, item.NameSpace);
                 // Check if the blob already exists
                 if (!await _blobProvider.BlobExistsAsync(CONTAINER_NAME, outputBlobName))
                 {
+                    var outputJson = JsonConvert.SerializeObject(item);
                     return _blobProvider.UploadAsync(CONTAINER_NAME, outputBlobName, outputJson);
                 }
 
@@ -134,12 +135,9 @@ namespace Function.Domain.Helpers
 
         private string GetUniqueHash(string name, string namespaceValue)
         {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                string combinedValues = $"{name}{namespaceValue}";
-                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(combinedValues));
-                return BitConverter.ToString(hashBytes).Replace("-", "");
-            }
+            string combinedValues = $"{name}{namespaceValue}";
+            byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(combinedValues));
+            return BitConverter.ToString(hashBytes).Replace("-", "");
         }
     }
 }

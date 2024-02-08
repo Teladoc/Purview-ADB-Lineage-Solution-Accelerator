@@ -11,6 +11,7 @@ using Azure.Messaging.EventHubs.Producer;
 using Function.Domain.Helpers;
 using Function.Domain.Services;
 using Function.Domain.Providers;
+using Function.Domain.Helpers.Logging;
 
 
 namespace AdbToPurview.Function
@@ -60,9 +61,9 @@ namespace AdbToPurview.Function
                 _logger.LogInformation($"OpenLineageIn: Processing request...");
                 // send event data to EventHub
                 var events = new List<EventData>();
-                
+
                 var strRequest = await req.ReadAsStringAsync();
-                if(string.IsNullOrEmpty(strRequest))
+                if (string.IsNullOrEmpty(strRequest))
                 {
                     throw new Exception("OpenLineageIn: Request is null or empty.");
                 }
@@ -88,7 +89,7 @@ namespace AdbToPurview.Function
                         events.Add(sendEvent);
                         await _producerClient.SendAsync(events, sendEventOptions);
 
-                        if (_olMessageStore.IsEnabled)
+                        if (await _olMessageStore.IsEnabledAsync())
                         {
                             _logger.LogInformation($"OpenLineageIn: Storing incoming file.");
                             // Save to blob storage
@@ -98,7 +99,7 @@ namespace AdbToPurview.Function
                 }
                 else
                 {
-                    if (_olMessageStore.IsEnabled)
+                    if (await _olMessageStore.IsEnabledAsync())
                     {
                         _logger.LogInformation($"OpenLineageIn: Storing skipped file.");
                         // Save to blob storage
@@ -113,7 +114,7 @@ namespace AdbToPurview.Function
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in OpenLineageIn function: {errorMessage}", ex.Message);
+                _logger.LogError(ex, ErrorCodes.OpenLineage.GenericError, "Error in OpenLineageIn function {ErrorMessage}", ex.Message);
                 return _httpHelper.CreateServerErrorHttpResponse(req);
             }
         }

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Function.Domain.Helpers;
+using Function.Domain.Helpers.Logging;
 using Function.Domain.Helpers.Parser;
 using Function.Domain.Models.OL;
 using Function.Domain.Models.SynapseSpark;
@@ -82,6 +83,11 @@ namespace Function.Domain.Services
                 var sparkApplicationId = string.Empty;
                 var notebookName = string.Empty;
 
+                // Message Enrichment
+                var olSynapseMessageEnrichment = new OlSynapseMessageEnrichment(_loggerFactory, _synapseClientProvider);
+                _event = await olSynapseMessageEnrichment.EnrichmentEventAsync(_event, workspaceName);
+
+
                 // Message Consolidation
                 var olSynapseMessageConsolidation = new OlSynapseMessageConsolidation(_loggerFactory, _blobProvider);
                 _event = await olSynapseMessageConsolidation.ConsolidateEventAsync(_event, jobSynapseName);
@@ -139,7 +145,7 @@ namespace Function.Domain.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating enriched event for job '{jobId}': {errorMessage}", _event.Job.Name, ex.Message);
+                _logger.LogError(ex, ErrorCodes.PurviewOut.SynapseOlMessageGeneric, "Error creating enriched event for job '{jobId}': {errorMessage}", _event.Job.Name, ex.Message);
                 throw;
             }
         }
