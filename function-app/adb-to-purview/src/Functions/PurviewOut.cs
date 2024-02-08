@@ -8,6 +8,9 @@ using Newtonsoft.Json.Linq;
 using Function.Domain.Models.OL;
 using System.Linq;
 using Function.Domain.Helpers.Logging;
+using Function.Domain.Services;
+using Function.Domain.Models.Messaging;
+using System.Security.Cryptography;
 
 namespace AdbToPurview.Function
 {
@@ -18,8 +21,14 @@ namespace AdbToPurview.Function
         private readonly IOlConsolidateEnrichFactory _olEnrichmentFactory;
         private readonly IOlToPurviewParsingService _olToPurviewParsingService;
         private readonly IPurviewIngestion _purviewIngestion;
+        private readonly IOlClaimCheckService _olClaimCheckService;
 
-        public PurviewOut(ILogger<PurviewOut> logger, IOlToPurviewParsingService olToPurviewParsingService, IPurviewIngestion purviewIngestion, IOlConsolidateEnrichFactory olEnrichmentFactory, ILoggerFactory loggerFactory)
+        public PurviewOut(ILogger<PurviewOut> logger,
+            IOlToPurviewParsingService olToPurviewParsingService,
+            IPurviewIngestion purviewIngestion,
+            IOlConsolidateEnrichFactory olEnrichmentFactory,
+            ILoggerFactory loggerFactory,
+            IOlClaimCheckService olClaimCheckService)
         {
             logger.LogInformation("Enter PurviewOut");
             _logger = logger;
@@ -27,6 +36,7 @@ namespace AdbToPurview.Function
             _olEnrichmentFactory = olEnrichmentFactory;
             _olToPurviewParsingService = olToPurviewParsingService;
             _purviewIngestion = purviewIngestion;
+            _olClaimCheckService = olClaimCheckService ?? throw new ArgumentNullException(nameof(olClaimCheckService));
         }
 
         [Function("PurviewOut")]
@@ -35,17 +45,20 @@ namespace AdbToPurview.Function
         public async Task<string> Run(
             [EventHubTrigger("%EventHubName%", IsBatched = false, Connection = "ListenToMessagesFromEventHub", ConsumerGroup = "%EventHubConsumerGroup%")] string input)
         {
+            OlClaimCheckMessage? claimCheckMessage = null;
             try
             {
+                claimCheckMessage = JsonConvert.DeserializeObject<OlClaimCheckMessage>(input) ?? throw new Exception("Invalid input message format. Unable to parse OlClaimCheckMessage.");
+                var payload = await _olClaimCheckService.GetClaimCheckPayloadAsync(claimCheckMessage.ClaimCheck.Id);
                 //Check if event is from Azure Synapse Spark Pools
                 // TODO : move this logic into a factory
-                if (input.Contains("azuresynapsespark"))
+                if (payload.Contains("azuresynapsespark"))
                 {
                     var olSynapseEnrichment = _olEnrichmentFactory.CreateEnrichment<EnrichedSynapseEvent>(OlEnrichmentType.Synapse);
-                    var olSynapseEvent = await olSynapseEnrichment.ProcessOlMessage(input);
+                    var olSynapseEvent = await olSynapseEnrichment.ProcessOlMessage(payload);
                     if (olSynapseEvent == null || olSynapseEvent.OlEvent == null)
                     {
-                        _logger.LogInformation($"Start event, duplicate event, or no context found for Synapse - eventData: {input}");
+                        _logger.LogInformation("Start event, duplicate event, or no context found for Synapse - eventData: {eventData}", payload);
                         return string.Empty;
                     }
 
@@ -65,10 +78,10 @@ namespace AdbToPurview.Function
                 else
                 {
                     var olConsolodateEnrich = _olEnrichmentFactory.CreateEnrichment<EnrichedEvent>(OlEnrichmentType.Adb);
-                    var enrichedEvent = await olConsolodateEnrich.ProcessOlMessage(input);
+                    var enrichedEvent = await olConsolodateEnrich.ProcessOlMessage(payload);
                     if (enrichedEvent == null)
                     {
-                        _logger.LogInformation($"Start event, duplicate event, or no context found - eventData: {input}");
+                        _logger.LogInformation("Start event, duplicate event, or no context found - eventData: {eventData}", payload);
                         return "";
                     }
 
@@ -85,14 +98,19 @@ namespace AdbToPurview.Function
                     await _purviewIngestion.SendToPurview(jObjectPurviewEvent);
                 }
 
-
-
                 return $"Output message created at {DateTime.Now}";
             }
             catch (Exception e)
             {
                 _logger.LogError(e, ErrorCodes.PurviewOut.GenericError, "Error in PurviewOut function {ErrorMessage}", e.Message);
                 return $"Error in PurviewOut function: {e.Message}";
+            }
+            finally
+            {
+                if (claimCheckMessage != null)
+                {
+                    await _olClaimCheckService.DeleteClaimCheckAsync(claimCheckMessage.ClaimCheck.Id);
+                }
             }
         }
     }

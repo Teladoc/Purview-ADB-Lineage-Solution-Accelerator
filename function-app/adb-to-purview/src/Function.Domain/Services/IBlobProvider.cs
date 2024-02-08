@@ -16,5 +16,7 @@ namespace Function.Domain.Services
         Task<List<string>> GetBlobsByHierarchyAsync(string folderPrefix, string containerName);
 
         Task<string> DownloadBlobAsync(string containerName, string blobName);
+
+        Task DeleteAsync(string containerName, string blobName);
     }
 }

@@ -12,6 +12,8 @@ using Function.Domain.Helpers;
 using Function.Domain.Services;
 using Function.Domain.Providers;
 using Function.Domain.Helpers.Logging;
+using Function.Domain.Models.Messaging;
+using Newtonsoft.Json;
 
 
 namespace AdbToPurview.Function
@@ -29,7 +31,7 @@ namespace AdbToPurview.Function
         private EventHubProducerClient _producerClient;
         private IConfiguration _configuration;
         private IOlFilter _olFilter;
-
+        private readonly IOlClaimCheckService _olClaimCheckService;
         private readonly IOlMessageProvider _olMessageStore;
 
         public OpenLineageIn(
@@ -37,7 +39,8 @@ namespace AdbToPurview.Function
                 IHttpHelper httpHelper,
                 IConfiguration configuration,
                 IOlFilter olFilter,
-                IOlMessageProvider olMessageStore)
+                IOlMessageProvider olMessageStore,
+                IOlClaimCheckService olClaimCheckService)
         {
             _logger = logger;
             _httpHelper = httpHelper;
@@ -45,6 +48,7 @@ namespace AdbToPurview.Function
             _producerClient = new EventHubProducerClient(_configuration[EH_CONNECTION_STRING], _configuration[EVENT_HUB_NAME]);
             _olFilter = olFilter;
             _olMessageStore = olMessageStore;
+            _olClaimCheckService = olClaimCheckService ?? throw new ArgumentNullException(nameof(olClaimCheckService));
         }
 
         [Function("OpenLineageIn")]
@@ -71,16 +75,20 @@ namespace AdbToPurview.Function
                 if (_olFilter.FilterOlMessage(strRequest))
                 {
                     _logger.LogInformation($"OpenLineageIn: Request passed validation.");
-                    var sendEvent = new EventData(strRequest);
-                    var sendEventOptions = new SendEventOptions();
+
                     // uses the OL Job Namespace as the EventHub partition key
                     var jobNamespace = _olFilter.GetJobNamespace(strRequest);
                     if (jobNamespace == "" || jobNamespace == null)
                     {
-                        _logger.LogError($"No Job Namespace found in event: {strRequest}");
+                        _logger.LogError("No Job Namespace found in event: {requestMessage}", strRequest);
                     }
                     else
                     {
+                        var claimCheck = await _olClaimCheckService.CreateClaimCheckAsync(strRequest);
+                        var claimCheckMessage = new OlClaimCheckMessage(claimCheck);
+                        var eventJson = JsonConvert.SerializeObject(claimCheckMessage);
+                        var sendEvent = new EventData(eventJson);
+                        var sendEventOptions = new SendEventOptions();
                         // log OpenLineage incoming data
                         _logger.LogInformation($"OpenLineageIn: <<{strRequest}>>");
 
