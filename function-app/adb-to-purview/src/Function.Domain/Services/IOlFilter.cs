@@ -5,5 +5,7 @@ namespace Function.Domain.Services
     {
         bool FilterOlMessage(string strRequest);
         string GetJobNamespace(string strRequest);
+
+        bool DoesMessageContainOlSchema(string input);
     }
 }

@@ -64,6 +64,11 @@ namespace Function.Domain.Services
             return olEvent?.Job.Namespace ?? "";
         }
 
+        public bool DoesMessageContainOlSchema(string input)
+        {
+            return input.Contains("https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/RunEvent");
+        }
+
         private Event? ParseOlEvent(string strEvent)
         {
             try

@@ -84,8 +84,11 @@ namespace AdbToPurview.Function
                     }
                     else
                     {
+                        //
                         var claimCheck = await _olClaimCheckService.CreateClaimCheckAsync(strRequest);
                         var claimCheckMessage = new OlClaimCheckMessage(claimCheck);
+
+                        // Create 
                         var eventJson = JsonConvert.SerializeObject(claimCheckMessage);
                         var sendEvent = new EventData(eventJson);
                         var sendEventOptions = new SendEventOptions();

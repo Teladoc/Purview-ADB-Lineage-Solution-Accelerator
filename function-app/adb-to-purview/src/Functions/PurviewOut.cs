@@ -8,35 +8,35 @@ using Newtonsoft.Json.Linq;
 using Function.Domain.Models.OL;
 using System.Linq;
 using Function.Domain.Helpers.Logging;
-using Function.Domain.Services;
 using Function.Domain.Models.Messaging;
-using System.Security.Cryptography;
+using Microsoft.Azure.Amqp;
+using System.Diagnostics;
 
 namespace AdbToPurview.Function
 {
     public class PurviewOut
     {
         private readonly ILogger<PurviewOut> _logger;
-        private readonly ILoggerFactory _loggerFactory;
         private readonly IOlConsolidateEnrichFactory _olEnrichmentFactory;
         private readonly IOlToPurviewParsingService _olToPurviewParsingService;
         private readonly IPurviewIngestion _purviewIngestion;
         private readonly IOlClaimCheckService _olClaimCheckService;
+        private readonly IOlFilter _olFilter;
 
         public PurviewOut(ILogger<PurviewOut> logger,
             IOlToPurviewParsingService olToPurviewParsingService,
             IPurviewIngestion purviewIngestion,
             IOlConsolidateEnrichFactory olEnrichmentFactory,
-            ILoggerFactory loggerFactory,
-            IOlClaimCheckService olClaimCheckService)
+            IOlClaimCheckService olClaimCheckService,
+            IOlFilter olFilter)
         {
             logger.LogInformation("Enter PurviewOut");
             _logger = logger;
-            _loggerFactory = loggerFactory;
             _olEnrichmentFactory = olEnrichmentFactory;
             _olToPurviewParsingService = olToPurviewParsingService;
             _purviewIngestion = purviewIngestion;
             _olClaimCheckService = olClaimCheckService ?? throw new ArgumentNullException(nameof(olClaimCheckService));
+            _olFilter = olFilter ?? throw new ArgumentNullException(nameof(olFilter));
         }
 
         [Function("PurviewOut")]
@@ -45,13 +45,35 @@ namespace AdbToPurview.Function
         public async Task<string> Run(
             [EventHubTrigger("%EventHubName%", IsBatched = false, Connection = "ListenToMessagesFromEventHub", ConsumerGroup = "%EventHubConsumerGroup%")] string input)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             OlClaimCheckMessage? claimCheckMessage = null;
             try
             {
-                claimCheckMessage = JsonConvert.DeserializeObject<OlClaimCheckMessage>(input) ?? throw new Exception("Invalid input message format. Unable to parse OlClaimCheckMessage.");
-                var payload = await _olClaimCheckService.GetClaimCheckPayloadAsync(claimCheckMessage.ClaimCheck.Id);
-                //Check if event is from Azure Synapse Spark Pools
-                // TODO : move this logic into a factory
+                string? payload;
+                if (_olFilter.DoesMessageContainOlSchema(input))
+                {
+                    // backwards compatible processing
+                    payload = input;
+                    if (string.IsNullOrWhiteSpace(payload))
+                    {                        
+                        _logger.LogInformation("Event skipped since payload is empty.");
+                        return "Event skipped since payload is empty.";
+                    }
+                }
+                else
+                {
+                    // Get payload from claim check
+                    claimCheckMessage = GetClaimCheckMessage(input);
+                    payload = await _olClaimCheckService.GetClaimCheckPayloadAsync(claimCheckMessage.ClaimCheck.Id);
+                    if (string.IsNullOrWhiteSpace(payload))
+                    {
+                        _logger.LogInformation("Event skipped since payload is empty. Used claim check {claimCheck}", claimCheckMessage.ClaimCheck.Id);
+                        return "Event skipped since payload is empty.";
+                    }
+                }
+                
+                //Check if event is from Azure Synapse Spark Pools                
                 if (payload.Contains("azuresynapsespark"))
                 {
                     var olSynapseEnrichment = _olEnrichmentFactory.CreateEnrichment<EnrichedSynapseEvent>(OlEnrichmentType.Synapse);
@@ -97,21 +119,47 @@ namespace AdbToPurview.Function
                     _logger.LogInformation("Calling SendToPurview");
                     await _purviewIngestion.SendToPurview(jObjectPurviewEvent);
                 }
-
                 return $"Output message created at {DateTime.Now}";
             }
             catch (Exception e)
             {
-                _logger.LogError(e, ErrorCodes.PurviewOut.GenericError, "Error in PurviewOut function {ErrorMessage}", e.Message);
+                _logger.LogError(e, "ErrorCode: {code}. Error in PurviewOut function {errorMessage}. Input: {eventInput}", ErrorCodes.PurviewOut.GenericError, e.Message, input);                
                 return $"Error in PurviewOut function: {e.Message}";
             }
             finally
             {
                 if (claimCheckMessage != null)
                 {
+                    _logger.LogInformation("Deleting claim check: {claimCheckId}", claimCheckMessage.ClaimCheck.Id);
                     await _olClaimCheckService.DeleteClaimCheckAsync(claimCheckMessage.ClaimCheck.Id);
                 }
+                StopTimer(stopwatch);
             }
+        }
+        private const string InvalidInputMessageFormat = "Invalid input message format. Unable to parse OlClaimCheckMessage.";
+        private OlClaimCheckMessage GetClaimCheckMessage(string input)
+        {
+            try
+            {
+                _logger.LogInformation("Parsing input message: {input}", input);
+                var claimCheckMessage = JsonConvert.DeserializeObject<OlClaimCheckMessage>(input) ?? throw new Exception(InvalidInputMessageFormat);
+                if(claimCheckMessage.ClaimCheck == null)
+                {
+                    throw new Exception(InvalidInputMessageFormat);
+                }
+                return claimCheckMessage;
+            }
+            catch (JsonSerializationException ex)
+            {
+                _logger.LogError(ex, "{errorMessage}: {eventInput}, error: {error} path: {errorPath}", InvalidInputMessageFormat, input, ex.Message, ex.Path);
+                throw;
+            }
+        }
+
+        private void StopTimer(Stopwatch stopwatch)
+        {
+            stopwatch.Stop();
+            _logger.LogInformation("PurviewOut: Time elapsed: {elapsed}", stopwatch.Elapsed);
         }
     }
 }

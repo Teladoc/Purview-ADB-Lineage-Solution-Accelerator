@@ -18,7 +18,7 @@ using Microsoft.FeatureManagement;
 using Function.Domain.Helpers.Parsers.Synapse;
 using Function.Domain.Helpers.Hash;
 
-namespace TestFunc
+namespace AdbToPurview
 {
     public class Program
     {
@@ -51,7 +51,7 @@ namespace TestFunc
                         s.AddSingleton<IBlobClientFactory, BlobClientFactory>();
                         s.AddScoped<IBlobProvider, BlobProvider>();
                         s.AddTransient<IOlMessageProvider, OlMessageProvider>();
-                        s.AddTransient<IOlClaimCheckService, OlClaimCheckService>();
+                        s.AddScoped<IOlClaimCheckService, OlClaimCheckService>();
                         s.AddHttpClient<ISynapseClientProvider, SynapseClientProvider>()
                         .AddPolicyHandler((provider, _) => GetRetryPolicy(provider.GetRequiredService<ILogger<Program>>()));
                     })
