@@ -299,7 +299,7 @@ namespace Function.Domain.Providers
             }
             catch (Exception ex)
             {
-                _log.LogError(ex, ErrorCodes.SynapseAPI.GetSynapseStorageLocation, "SynapseClient-GetSynapseStorageLocation: Failed to get storage location for {databaseName} and {tableName}. Endpoint: {endpoint}. ErrorMessage {ErrorMessage}", databaseName, tableName, request.RequestUri, ex.Message);
+                _log.LogWarning(ErrorCodes.SynapseAPI.GetSynapseStorageLocation, "SynapseClient-GetSynapseStorageLocation: Failed to get storage location for {databaseName} and {tableName}. Endpoint: {endpoint}. ErrorMessage {ErrorMessage}. Original Error: {originalError}", databaseName, tableName, request.RequestUri, ex.Message, ex.ToString());
             }
             return location;
         }

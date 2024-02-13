@@ -16,35 +16,56 @@ namespace Function.Domain.Middleware
     {
         const string CORRELATION_ID_HEADER_NAME = "CorrelationID";
 
+        private const string ContextDataKey = "run";
+
         public string CorrelationId = "";
 
-    /// <summary>
-    /// Invoke
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="next"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentNullException"></exception>
-    public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
+        /// <summary>
+        /// Invoke
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="next"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
         {
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
             }
-
-            object runobj = context?.BindingContext?.BindingData["run"] ?? new Object();
-            string runjson = runobj.ToString() ?? "";
-            var runFacet = JsonConvert.DeserializeObject<Run>(runjson) ?? new Run();
-
-            CorrelationId = runFacet.RunId;
-
+            object? bindingData = null;
+            if (!(context?.BindingContext?.BindingData.TryGetValue(ContextDataKey, out bindingData)).GetValueOrDefault(false))
+            {
+                await next(context!);
+            }
+            if (bindingData == null)
+            {
+                await next(context!);
+            }
             ILogger logger = context!.GetLogger<ScopedLoggingMiddleware>();
 
-            if (string.IsNullOrEmpty(CorrelationId))
+            try
             {
-                CorrelationId = Guid.NewGuid().ToString();
-                logger.LogWarning($"No CorrelationId found in request. Generated new CorrelationId: {CorrelationId}");
+                logger.LogInformation("ScopedLoggingMiddleware: BindingData is {bindingData}", bindingData);
+
+                object runobj = bindingData ?? new();
+                string runjson = runobj?.ToString() ?? "";
+                var runFacet = JsonConvert.DeserializeObject<Run>(runjson) ?? new Run();
+                CorrelationId = runFacet.RunId;
+
+                if (string.IsNullOrEmpty(CorrelationId))
+                {
+                    CorrelationId = Guid.NewGuid().ToString();
+                    logger.LogWarning($"No CorrelationId found in request. Generated new CorrelationId: {CorrelationId}");
+                }
             }
+            catch (JsonReaderException ex)
+            {
+                logger.LogError(ex, "ScopedLoggingMiddleware: Error deserializing binding data to Run. BindingData: {bindingData}. JSON Path: {path}", bindingData, ex.Path);
+                await next(context!);
+                return;
+            }
+            
 
             try
             {

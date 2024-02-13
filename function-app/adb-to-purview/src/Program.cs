@@ -25,10 +25,12 @@ namespace AdbToPurview
         public static void Main()
         {
             var host = new HostBuilder()
-                .ConfigureFunctionsWebApplication(workerApplication =>
-                {
-                    workerApplication.UseMiddleware<ScopedLoggingMiddleware>();
-                })
+                // TODO : Scope logging middleware is useful but with the change to claimcheck, the binding data does not have the runid.
+                // consider updating the OLIn function to include the runid in the claimcheck message and then re-enable this middleware.
+                // .ConfigureFunctionsWebApplication(workerApplication =>
+                // {
+                //     workerApplication.UseMiddleware<ScopedLoggingMiddleware>();
+                // })
                 .ConfigureLogging((context, builder) =>
                     {
                         var key = context.Configuration["APPINSIGHTS_INSTRUMENTATIONKEY"];
