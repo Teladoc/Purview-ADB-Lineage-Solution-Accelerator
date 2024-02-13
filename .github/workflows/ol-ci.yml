@@ -48,7 +48,10 @@ jobs:
         - name: 'Setup .NET Environment'
           uses: actions/setup-dotnet@v1
           with:
-            dotnet-version: ${{ env.DOTNET_VERSION }}      
+            dotnet-version: ${{ env.DOTNET_VERSION }}
+        - uses: actions/setup-python@v5
+          with:
+            python-version: '3.10'
         - name: Install dependencies
           run: dotnet restore ${{ env.REPO }}          
         - name: Build
