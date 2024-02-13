@@ -39,7 +39,7 @@ jobs:
 
     build:
       name: "Build"
-      runs-on: ubuntu-latest #vm-udf-dmz-caf-dv-eu2-1
+      runs-on: udf-govern
       environment: 
         name: dev
       steps:             
@@ -90,7 +90,7 @@ jobs:
     deployToDev:
       name: "Deploy to Dev"
       needs: [build]
-      runs-on: ubuntu-latest #vm-udf-dmz-caf-dv-eu2-1
+      runs-on: udf-govern
       environment: 
         name: dev
       env:
