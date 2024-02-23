@@ -17,6 +17,8 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
 using Function.Domain.Helpers.Logging;
+using Azure.Identity;
+using Azure.Core;
 
 namespace Function.Domain.Providers
 {
@@ -25,6 +27,7 @@ namespace Function.Domain.Providers
     /// </summary>
     public class SynapseClientProvider : ISynapseClientProvider
     {
+        private const string SynapseApiScope = "https://dev.azuresynapse.net/.default";
         // TODO : REDO config with DI
         private AppConfigurationSettings? config = new AppConfigurationSettings();
 
@@ -50,9 +53,31 @@ namespace Function.Domain.Providers
 
         private async Task GetBearerTokenAsync()
         {
+            string[] scopes = [SynapseApiScope];
+            if (config!.UseUserMsi)
+            {
+                try
+                {
+                    var credentialConfig = new DefaultAzureCredentialOptions
+                    {
+                        TenantId = config.TenantId,
+                        ExcludeAzureCliCredential = false,
+                        ManagedIdentityClientId = config.UserMsiId
+                    };
+                    var tokenRequestContext = new TokenRequestContext(scopes);
+                    var cred = new DefaultAzureCredential(credentialConfig);
+                    var token = await cred.GetTokenAsync(tokenRequestContext);
+                    _bearerToken = new JwtSecurityToken(token.Token);
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "SynapseClientProvider: Error getting Authentication Token for Synapse Workspace API. Error: {errorMessage}", ex.Message);                    
+                }
+                return;
+            }
+
             // Even if this is a console application here, a daemon application is a confidential client application
             IConfidentialClientApplication app;
-
             if (config!.IsAppUsingClientSecret())
             {
                 // Even if this is a console application here, a daemon application is a confidential client application
@@ -71,8 +96,6 @@ namespace Function.Domain.Providers
                     .WithAuthority(new Uri(config.Authority))
                     .Build();
             }
-
-            string[] scopes = new string[] { "https://dev.azuresynapse.net/.default" };
 
             AuthenticationResult? result;
             try

@@ -106,6 +106,9 @@ namespace Function.Domain.Models.Settings
         public AppConfigurationSettings()
         {
             ReadSettings();
-        }
+        }       
+
+        public bool UseUserMsi { get; set; } = false;
+        public string UserMsiId { get; set; } = string.Empty;
     }
 }
