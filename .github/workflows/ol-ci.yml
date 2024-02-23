@@ -140,3 +140,108 @@ jobs:
             package: ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }}
             publish-profile: ${{ steps.fncapp.outputs.pubprofile }}
             # TODO : Store as secret ${{ secrets.PUBLISH_PROFILE }}
+    
+            ############################################################################
+
+    ############################################################################ 
+    
+    deployToTest:
+      name: "Deploy to Test"
+      needs: [deployToDev]
+      runs-on: udf-govern
+      environment: 
+        name: int
+      env:
+        SECRET_STORE_NAME: ${{ vars.SECRET_STORE }}
+        SECRET_ENV_CODE: int
+        AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+      steps:
+        - name: 'Checking out source code ...'
+          uses: actions/checkout@v3
+        - name: 'Create Artifact Directory'          
+          run: |
+            mkdir ${{ env.BUILD_OUTPUT_PATH }}       
+        - name: 'Download Application Artifacts'
+          uses: actions/download-artifact@v2
+          with:
+            name: build_artifacts
+            path: ${{ env.BUILD_OUTPUT_PATH }}          
+        - name: Login with Contributor
+          uses: ./.github/actions/login-with-contributor
+          with:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+            SECRET_ENV_CODE: ${SECRET_ENV_CODE}
+            SECRET_STORE_NAME: ${SECRET_STORE_NAME}
+      
+        - name: 'Fetch Azure Functions Publishing Profile'
+          id: fncapp
+          uses: azure/powershell@v1
+          with:
+            inlineScript: |
+              $profile = ""
+              $profile = Get-AzWebAppPublishingProfile -ResourceGroupName $env:AZURE_RESOURCE_GROUP_NAME -Name $env:AZURE_FUNCTIONAPP_NAME
+              $profile = $profile.Replace("`r", "").Replace("`n", "")
+              Write-Output "::set-output name=pubprofile::$profile"
+              Remove-Variable profile
+            azPSVersion: "latest"
+                  
+        - name: 'Deploy Application'
+          uses: azure/functions-action@v1.5.1
+          with:
+            app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+            package: ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }}
+            publish-profile: ${{ steps.fncapp.outputs.pubprofile }}
+    
+    ############################################################################
+    deployToPt:
+      name: "Deploy to PT"
+      needs: [deployToTest]
+      runs-on: udf-govern
+      environment: 
+        name: "pt"
+      env:
+        SECRET_STORE_NAME: ${{ vars.SECRET_STORE }}
+        SECRET_ENV_CODE: pt
+        AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
+        AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+      steps:
+        - name: 'Checking out source code ...'
+          uses: actions/checkout@v3
+        - name: 'Create Artifact Directory'          
+          run: |
+            mkdir ${{ env.BUILD_OUTPUT_PATH }}       
+        - name: 'Download Application Artifacts'
+          uses: actions/download-artifact@v2
+          with:
+            name: build_artifacts
+            path: ${{ env.BUILD_OUTPUT_PATH }}          
+        - name: Login with Contributor
+          uses: ./.github/actions/login-with-contributor
+          with:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+            SECRET_ENV_CODE: ${SECRET_ENV_CODE}
+            SECRET_STORE_NAME: ${SECRET_STORE_NAME}
+      
+        - name: 'Fetch Azure Functions Publishing Profile'
+          id: fncapp
+          uses: azure/powershell@v1
+          with:
+            inlineScript: |
+              $profile = ""
+              $profile = Get-AzWebAppPublishingProfile -ResourceGroupName $env:AZURE_RESOURCE_GROUP_NAME -Name $env:AZURE_FUNCTIONAPP_NAME
+              $profile = $profile.Replace("`r", "").Replace("`n", "")
+              Write-Output "::set-output name=pubprofile::$profile"
+              Remove-Variable profile
+            azPSVersion: "latest"
+                  
+        - name: 'Deploy Application'
+          uses: azure/functions-action@v1.5.1
+          with:
+            app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+            package: ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }}
+            publish-profile: ${{ steps.fncapp.outputs.pubprofile }}            
