@@ -91,6 +91,7 @@ jobs:
     ############################################################################
 
     deployToDev:
+      if: false # TODO : once dev is ready comment out.
       name: "Deploy to Dev"
       needs: [build]
       runs-on: udf-govern
@@ -147,7 +148,7 @@ jobs:
     
     deployToTest:
       name: "Deploy to Test"
-      needs: [deployToDev]
+      needs: [build] # [deployToDev] # TODO : once dev is ready comment out.
       runs-on: udf-govern
       environment: 
         name: int
