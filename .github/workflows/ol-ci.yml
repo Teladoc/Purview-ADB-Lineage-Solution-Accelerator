@@ -40,8 +40,6 @@ jobs:
     build:
       name: "Build"
       runs-on: udf-govern
-      environment: 
-        name: dev
       steps:             
         - name: 'Checking out source code ...'
           uses: actions/checkout@v3
@@ -149,7 +147,7 @@ jobs:
     deployToTest:
       name: "Deploy to Test"
       needs: [build] # [deployToDev] # TODO : once dev is ready comment out.
-      runs-on: udf-govern
+      runs-on: udf-govern-int
       environment: 
         name: int
       env:
@@ -200,7 +198,7 @@ jobs:
     deployToPt:
       name: "Deploy to PT"
       needs: [deployToTest]
-      runs-on: udf-govern
+      runs-on: udf-govern-pt
       environment: 
         name: "pt"
       env:
