@@ -43,10 +43,6 @@ jobs:
       steps:             
         - name: 'Checking out source code ...'
           uses: actions/checkout@v3
-        - name: echo1
-          run: echo ${{ github.ref }}
-        - name: echo2
-          run: echo ${{ github }}
         - name: 'Setup .NET Environment'
           uses: actions/setup-dotnet@v1
           with:
@@ -93,7 +89,7 @@ jobs:
     ############################################################################
 
     deployToDev:
-      if: false # TODO : once dev is ready comment out. # if: github.event_name != 'pull_request' && success() && github.ref == 'refs/features/add-synapse-support'
+      if: false # TODO : once dev is ready comment out. # if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
       name: "Deploy to Dev"
       needs: [build]
       runs-on: udf-govern
@@ -151,7 +147,7 @@ jobs:
     deployToTest:
       name: "Deploy to Test"
       needs: [build] # [deployToDev] # TODO : once dev is ready comment out.
-      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/head/features/add-synapse-support'
+      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
       runs-on: udf-govern-int
       environment: 
         name: int
@@ -203,7 +199,7 @@ jobs:
     deployToPt:
       name: "Deploy to PT"
       needs: [deployToTest]
-      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/head/features/add-synapse-support'
+      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
       runs-on: udf-govern-pt
       environment: 
         name: "pt"
