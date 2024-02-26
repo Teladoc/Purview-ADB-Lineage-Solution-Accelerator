@@ -58,6 +58,11 @@ namespace Function.Domain.Providers
             {
                 try
                 {
+                    _log.LogInformation("SynapseClientProvider: Retrieving token using User MSI. TenantId: {tenantId}, UserMsiId: {userMsiId}", config.TenantId, config.UserMsiId);
+                    foreach (string scope in scopes)
+                    {
+                        _log.LogInformation("SynapseClientProvider: Using scope: {scope}", scope);
+                    }
                     var credentialConfig = new DefaultAzureCredentialOptions
                     {
                         TenantId = config.TenantId,
@@ -71,7 +76,7 @@ namespace Function.Domain.Providers
                 }
                 catch (Exception ex)
                 {
-                    _log.LogError(ex, "SynapseClientProvider: Error getting Authentication Token for Synapse Workspace API. Error: {errorMessage}", ex.Message);                    
+                    _log.LogError(ex, "SynapseClientProvider: Error getting Authentication Token for Synapse Workspace API. Error: {errorMessage}", ex.Message);
                 }
                 return;
             }
@@ -100,6 +105,7 @@ namespace Function.Domain.Providers
             AuthenticationResult? result;
             try
             {
+                _log.LogInformation("SynapseClientProvider: Retrieving token using SPN. TenantId: {tenantId}, ClientID: {clientID}", config.TenantId, config.ClientID);
                 foreach (string s in scopes)
                 {
                     _log.LogInformation(s);
