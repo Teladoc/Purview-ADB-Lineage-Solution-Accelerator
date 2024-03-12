@@ -89,7 +89,7 @@ jobs:
     ############################################################################
 
     deployToDev:
-      if: false # TODO : once dev is ready comment out. # if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
+      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
       name: "Deploy to Dev"
       needs: [build]
       runs-on: udf-govern
@@ -146,7 +146,7 @@ jobs:
     
     deployToTest:
       name: "Deploy to Test"
-      needs: [build] # [deployToDev] # TODO : once dev is ready comment out.
+      needs: [deployToDev]
       if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
       runs-on: udf-govern-int
       environment: 
