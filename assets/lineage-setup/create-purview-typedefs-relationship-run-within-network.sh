@@ -39,7 +39,7 @@ accesstoken=`jq -r '.access_token' <<< "$authorization"`
 
 
 # Create typedef for purview_custom_connector_generic_entity_with_columns
-curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
+curl --location -w "\n\nhttp status code=%{http_code}\n" --request PUT \
 -d @synapse-purview-types/purview_custom_connector_generic_entity_with_columns.json \
 "https://$purviewname.purview.azure.com/catalog/api/atlas/v2/types/typedefs" \
 --header 'Content-Type: application/json' \
@@ -48,7 +48,7 @@ curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
 echo -e "\n"
 
 # Create typedef for Azure Synapse Notebook
-curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
+curl --location -w "\n\nhttp status code=%{http_code}\n" --request PUT \
 -d @synapse-purview-types/purview_synapse_notebook_typedef.json \
 "https://$purviewname.purview.azure.com/catalog/api/atlas/v2/types/typedefs" \
 --header 'Content-Type: application/json' \
@@ -58,7 +58,7 @@ echo -e "\n"
 
 
 # Create relationship between Synapse Workspace and Synapse Notebook
-curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
+curl --location -w "\n\nhttp status code=%{http_code}\n" --request PUT \
 -d @synapse-purview-types/purview_synapse_workspace_notebook_relationship.json \
 "https://$purviewname.purview.azure.com/catalog/api/atlas/v2/types/typedefs" \
 --header 'Content-Type: application/json' \
@@ -67,7 +67,7 @@ curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
 echo -e "\n"
 
 # Create relationship between Synapse Notebook and Process typedef
-curl --location -w "\n\nhttp status code=%{http_code}\n" --request POST \
+curl --location -w "\n\nhttp status code=%{http_code}\n" --request PUT \
 -d @synapse-purview-types/purview_synapse_notebook_process_basic_relationship.json \
 "https://$purviewname.purview.azure.com/catalog/api/atlas/v2/types/typedefs" \
 --header 'Content-Type: application/json' \
