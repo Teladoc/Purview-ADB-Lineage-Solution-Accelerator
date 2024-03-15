@@ -210,7 +210,16 @@ jobs:
     deployToPt:
       name: "Deploy to PT"
       needs: [deployToTest]
-      if: github.event_name != 'pull_request' && (success() || needs.deployToTest.result == 'skipped') && github.ref == 'refs/heads/features/add-synapse-support' && (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Prod-Training')
+      if: |
+        github.event_name != 'pull_request' && 
+        github.ref == 'refs/heads/features/add-synapse-support' && 
+        (success() || needs.deployToTest.result == 'skipped') &&         
+        (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Prod-Training')
+      # if: | 
+      #   github.event_name != 'pull_request' && 
+      #   github.ref == 'refs/heads/features/add-synapse-support' && 
+      #   (github.event.inputs.environmentToDeploy == 'All' && success()) &&         
+      #   (github.event.inputs.environmentToDeploy == 'Prod-Training' && needs.deployToTest.result == 'skipped')
       runs-on: udf-govern-pt
       environment: 
         name: "pt"
