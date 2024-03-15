@@ -2,6 +2,17 @@ name: OpenLineage Build and Release
 
 on:
   workflow_dispatch:
+    inputs:
+      environmentToDeploy:
+        type: choice
+        description: Which environment to deploy packages to?
+        options: 
+          - All
+          - Dev
+          - Test
+          - Prod-Training
+          - Production          
+        default: All
   push:
     branches: [ main ]
     paths:
@@ -89,7 +100,7 @@ jobs:
     ############################################################################
 
     deployToDev:
-      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
+      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support' && (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Dev')
       name: "Deploy to Dev"
       needs: [build]
       runs-on: udf-govern
@@ -199,7 +210,7 @@ jobs:
     deployToPt:
       name: "Deploy to PT"
       needs: [deployToTest]
-      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
+      if: github.event_name != 'pull_request' && (success() || needs.deployToTest.result == 'skipped') && github.ref == 'refs/heads/features/add-synapse-support' && (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Prod-Training')
       runs-on: udf-govern-pt
       environment: 
         name: "pt"
