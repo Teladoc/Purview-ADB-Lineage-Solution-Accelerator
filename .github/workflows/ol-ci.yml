@@ -158,7 +158,11 @@ jobs:
     deployToTest:
       name: "Deploy to Test"
       needs: [deployToDev]
-      if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support'
+      if: |
+        github.event_name != 'pull_request' && 
+        github.ref == 'refs/heads/features/add-synapse-support' && 
+        (success() || needs.deployToDev.result == 'skipped') &&         
+        (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Test')
       runs-on: udf-govern-int
       environment: 
         name: int
