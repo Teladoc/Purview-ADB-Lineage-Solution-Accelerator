@@ -205,7 +205,7 @@ jobs:
         name: "pt"
       env:
         SECRET_STORE_NAME: ${{ vars.SECRET_STORE }}
-        SECRET_ENV_CODE: pt
+        SECRET_ENV_CODE: productiontraining
         AZURE_RESOURCE_GROUP_NAME: ${{ vars.AZURE_RESOURCE_GROUP_NAME }}
         AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
       steps:
