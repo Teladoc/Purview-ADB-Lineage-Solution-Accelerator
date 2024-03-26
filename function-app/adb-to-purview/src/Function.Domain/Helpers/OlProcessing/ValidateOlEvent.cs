@@ -76,6 +76,10 @@ namespace Function.Domain.Helpers.Parser
             {
                 return false;
             }
+            if(olEvent.Job.Name.Contains("collect_limit"))
+            {
+                return false;
+            }
             return true;
         }
 
