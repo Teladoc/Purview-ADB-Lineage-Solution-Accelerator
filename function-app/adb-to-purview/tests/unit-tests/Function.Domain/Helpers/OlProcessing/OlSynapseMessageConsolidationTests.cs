@@ -48,6 +48,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.ConsolidateEventAsync(olEvent, "notebook_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.Single(actual.Inputs);
             Xunit.Assert.Single(actual.Outputs);
         }
@@ -76,6 +77,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.ConsolidateEventAsync(olEvent, "notebook_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.Single(actual.Inputs);
             Xunit.Assert.Single(actual.Outputs);
         }
@@ -125,6 +127,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.ConsolidateEventAsync(olEvent2, "notebook_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.Equal(2, actual.Inputs.Count);
             Xunit.Assert.Equal(2, actual.Outputs.Count);
             // modify the names , notebooks , etc

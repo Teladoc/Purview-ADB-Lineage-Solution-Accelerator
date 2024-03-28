@@ -42,6 +42,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.EnrichmentEventAsync(olEvent, "n_b_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.True(actual.Inputs.Count > inputCount);
             Xunit.Assert.True(actual.Outputs.Count > outPutCount);
         }
@@ -62,6 +63,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.EnrichmentEventAsync(olEvent, "n_b_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.True(actual.Inputs.Count > inputCount);
         }
 
@@ -81,6 +83,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.EnrichmentEventAsync(olEvent, "n_b_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.True(actual.Outputs.Count > outPutCount);
         }
 
@@ -99,6 +102,7 @@ namespace UnitTests.Function.Domain.Helpers.OlProcessing
             var actual = await _consolidator.EnrichmentEventAsync(olEvent, "n_b_1701716033");
 
             // Assert
+            Assert.NotNull(actual);
             Xunit.Assert.Equal(olEvent.Inputs.Count, actual.Inputs.Count);
             Xunit.Assert.Equal(olEvent.Outputs.Count, actual.Outputs.Count);
         }
