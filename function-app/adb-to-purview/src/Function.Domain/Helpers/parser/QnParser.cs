@@ -66,7 +66,7 @@ namespace Function.Domain.Helpers
             if (mapping is null)
             {
                 var ex = new MissingCriticalDataException("Missing Ol to Purview mapping data for this source");
-                _logger.LogError(ex, "Missing Ol to Purview mapping data");
+                _logger.LogError(ex, "Missing Ol to Purview mapping data for namespace {namespace} and name {name}", nameSpace, name);
                 throw ex;
             }
 
