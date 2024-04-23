@@ -103,7 +103,7 @@ jobs:
       if: github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/features/add-synapse-support' && (github.event.inputs.environmentToDeploy == 'All' || github.event.inputs.environmentToDeploy == 'Dev')
       name: "Deploy to Dev"
       needs: [build]
-      runs-on: udf-govern
+      runs-on: udf-govern-dv
       environment: 
         name: dev
       env:
