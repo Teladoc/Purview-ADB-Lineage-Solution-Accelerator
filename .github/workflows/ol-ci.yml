@@ -50,7 +50,7 @@ jobs:
 
     build:
       name: "Build"
-      runs-on: udf-govern
+      runs-on: udf-govern-dv
       steps:             
         - name: 'Checking out source code ...'
           uses: actions/checkout@v3
