@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using System.Net;
 using Microsoft.Azure.Functions.Worker.Http;
+using System.Linq;
 
 namespace Function.Domain.Helpers
 {
@@ -18,6 +19,21 @@ namespace Function.Domain.Helpers
             var response = req.CreateResponse(HttpStatusCode.InternalServerError);
 
             return response;
+        }
+
+        public HttpResponseData CreateUnauthorizedHttpResponse(HttpRequestData req)
+        {
+            var response = req.CreateResponse(HttpStatusCode.Forbidden);
+            return response;
+        }
+
+        public bool ValidateRequestHeaders(HttpRequestData req, string sourceHeaderExpectedValue)
+        {            
+            if (req.Headers.TryGetValues("x-teladoc-udf-ol-source", out var values))
+            {
+                return values.Contains(sourceHeaderExpectedValue, System.StringComparer.OrdinalIgnoreCase);
+            }
+            return false;
         }
     }
 }

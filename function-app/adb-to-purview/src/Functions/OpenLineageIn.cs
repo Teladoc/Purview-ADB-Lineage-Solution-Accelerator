@@ -54,7 +54,7 @@ namespace AdbToPurview.Function
         [Function("OpenLineageIn")]
         public async Task<HttpResponseData> Run(
             [HttpTrigger(
-                AuthorizationLevel.Function,
+                AuthorizationLevel.Anonymous,
                 "get",
                 "post",
                 Route = "v1/lineage"
@@ -63,15 +63,24 @@ namespace AdbToPurview.Function
             try
             {
                 _logger.LogInformation($"OpenLineageIn: Processing request...");
+
+                // Validate request headers
+                if (!_httpHelper.ValidateRequestHeaders(req, _configuration["OlSourceHeaderExpectedValue"] ?? Guid.NewGuid().ToString()))
+                {
+                    return _httpHelper.CreateUnauthorizedHttpResponse(req);
+                }
+
                 // send event data to EventHub
                 var events = new List<EventData>();
-
                 var strRequest = await req.ReadAsStringAsync();
+
+                // Validate body is not empty
                 if (string.IsNullOrEmpty(strRequest))
                 {
                     throw new Exception("OpenLineageIn: Request is null or empty.");
                 }
 
+                // Validate body is OpenLineage message
                 if (_olFilter.FilterOlMessage(strRequest))
                 {
                     _logger.LogInformation($"OpenLineageIn: Request passed validation.");

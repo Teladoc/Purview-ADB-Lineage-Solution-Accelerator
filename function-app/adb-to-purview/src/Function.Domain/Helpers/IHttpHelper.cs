@@ -7,5 +7,7 @@ namespace Function.Domain.Helpers
     {
          public Task<HttpResponseData> CreateSuccessfulHttpResponse(HttpRequestData req, object data);
          public HttpResponseData CreateServerErrorHttpResponse(HttpRequestData req);
+         public HttpResponseData CreateUnauthorizedHttpResponse(HttpRequestData req);
+         public bool ValidateRequestHeaders(HttpRequestData req, string sourceHeaderExpectedValue);
     }
 }
