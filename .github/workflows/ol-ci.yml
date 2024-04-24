@@ -59,6 +59,9 @@ jobs:
           with:
             dotnet-version: ${{ env.DOTNET_VERSION }}
             cache: true
+          env:
+            DOTNET_INSTALL_DIR: '$GITHUB_WORKSPACE/Microsoft/dotnet'
+            DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true            
         - uses: actions/setup-python@v5
           with:
             python-version: '3.10'
