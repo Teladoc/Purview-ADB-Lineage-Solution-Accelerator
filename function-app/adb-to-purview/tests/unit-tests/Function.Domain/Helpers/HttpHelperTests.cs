@@ -17,7 +17,7 @@ namespace UnitTests.Function.Domain.Helpers
 {
     public class HttpHelperTests
     {
-        private HttpHelper _util = new();
+        private readonly HttpHelper _util = new();
         
         [Fact]
         public void ValidateRequestHeaders_Should_Return_True_When_SourceHeader_Matches()

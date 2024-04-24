@@ -7,38 +7,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Claims;
+using System.Net.Http;
 
 namespace UnitTests.Mocks
 {
-    public class FakeHttpRequestData : HttpRequestData
+    public class FakeHttpRequestData(FunctionContext functionContext, Uri url, Stream? body = null) : HttpRequestData(functionContext)
     {
         public FakeHttpRequestData() : this(new FakeFunctionContext(), new Uri("http://fakeurl.test"))
         {
 
         }
 
-        public FakeHttpRequestData(FunctionContext functionContext, Uri url, Stream body = null) : base(functionContext)
-        {
-            Url = url;
-            Body = body ?? new MemoryStream();
-        }
-
-        public override Stream Body { get; } = new MemoryStream();
+        public override Stream Body { get; } = body ?? new MemoryStream();
 
         public override HttpHeadersCollection Headers { get; } = [];
 
-        public override IReadOnlyCollection<IHttpCookie> Cookies { get; }
+        public override IReadOnlyCollection<IHttpCookie> Cookies { get; } = [];
 
-        public override Uri Url { get; }
+        public override Uri Url { get; } = url;
 
-        public override IEnumerable<ClaimsIdentity> Identities { get; }
+        public override IEnumerable<ClaimsIdentity> Identities { get; } = [];
 
-        public override string Method { get; }
+        public override string Method { get; } = HttpMethod.Get.Method;
 
         public override HttpResponseData CreateResponse()
         {
             return new FakeHttpResponseData(FunctionContext);
         }
-    }
-
+    }  
 }
