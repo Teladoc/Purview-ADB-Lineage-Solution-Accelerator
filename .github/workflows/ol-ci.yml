@@ -58,6 +58,7 @@ jobs:
           uses: actions/setup-dotnet@v4
           with:
             dotnet-version: ${{ env.DOTNET_VERSION }}
+            cache: true
         - uses: actions/setup-python@v5
           with:
             python-version: '3.10'
