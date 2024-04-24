@@ -55,10 +55,9 @@ jobs:
         - name: 'Checking out source code ...'
           uses: actions/checkout@v4
         - name: 'Setup .NET Environment'
-          uses: actions/setup-dotnet@v3
+          uses: actions/setup-dotnet@v4
           with:
             dotnet-version: ${{ env.DOTNET_VERSION }}
-            cache: true
           env:
             DOTNET_INSTALL_DIR: '$GITHUB_WORKSPACE/Microsoft/dotnet'
             DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true            
