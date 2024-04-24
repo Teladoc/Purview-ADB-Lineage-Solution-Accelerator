@@ -53,9 +53,9 @@ jobs:
       runs-on: udf-govern-dv
       steps:             
         - name: 'Checking out source code ...'
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: 'Setup .NET Environment'
-          uses: actions/setup-dotnet@v1
+          uses: actions/setup-dotnet@v4
           with:
             dotnet-version: ${{ env.DOTNET_VERSION }}
         - uses: actions/setup-python@v5
@@ -78,7 +78,7 @@ jobs:
             zip -r ${{ env.BUILD_OUTPUT_PATH }}/${{ env.BUILD_PACKAGE_NAME }} .
        
         - name: 'Upload Function Zip Build Artifact'
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: build_artifacts
             path: ${{ env.BUILD_OUTPUT_PATH }}
@@ -92,7 +92,7 @@ jobs:
             ls ${{ github.workspace }}/artifact-mappings
 
         - name: Upload One Line OlToPurviewMappings Build Artifact
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: mappings
             path: ${{ github.workspace }}/artifact-mappings/one-line-mappings.json            
@@ -113,7 +113,7 @@ jobs:
         AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
       steps:
         - name: 'Checking out source code ...'
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: 'Create Artifact Directory'          
           run: |
             mkdir ${{ env.BUILD_OUTPUT_PATH }}       
@@ -173,7 +173,7 @@ jobs:
         AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
       steps:
         - name: 'Checking out source code ...'
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: 'Create Artifact Directory'          
           run: |
             mkdir ${{ env.BUILD_OUTPUT_PATH }}       
@@ -234,7 +234,7 @@ jobs:
         AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
       steps:
         - name: 'Checking out source code ...'
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: 'Create Artifact Directory'          
           run: |
             mkdir ${{ env.BUILD_OUTPUT_PATH }}       
