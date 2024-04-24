@@ -64,12 +64,9 @@ jobs:
         - name: Install dependencies
           run: dotnet restore ${{ env.REPO }}          
         - name: Build
-          run: dotnet build ${{ env.REPO }} -c ${{ env.BUILD_CONFIGURATION }} --no-restore          
+          run: dotnet build ${{ env.REPO }} -c ${{ env.BUILD_CONFIGURATION }} --no-restore
         - name: Test
-          run:  dotnet test ${{ env.TEST }} -c ${{ env.BUILD_CONFIGURATION }}
-
-        - name: Test
-          run: dotnet test --logger trx --results-directory "TestResults-${{ env.DOTNET_VERSION }}"
+          run: dotnet test ${{ env.TEST }} -c ${{ env.BUILD_CONFIGURATION }} --logger trx --results-directory "TestResults-${{ env.DOTNET_VERSION }}"
         - name: Upload dotnet test results
           uses: actions/upload-artifact@v4
           with:
