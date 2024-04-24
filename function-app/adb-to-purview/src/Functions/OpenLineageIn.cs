@@ -14,6 +14,8 @@ using Function.Domain.Providers;
 using Function.Domain.Helpers.Logging;
 using Function.Domain.Models.Messaging;
 using Newtonsoft.Json;
+using Microsoft.FeatureManagement;
+using Function.Domain.Constants;
 
 
 namespace AdbToPurview.Function
@@ -33,6 +35,7 @@ namespace AdbToPurview.Function
         private IOlFilter _olFilter;
         private readonly IOlClaimCheckService _olClaimCheckService;
         private readonly IOlMessageProvider _olMessageStore;
+        private readonly IFeatureManager _featureManager;
 
         public OpenLineageIn(
                 ILogger<OpenLineageIn> logger,
@@ -40,7 +43,8 @@ namespace AdbToPurview.Function
                 IConfiguration configuration,
                 IOlFilter olFilter,
                 IOlMessageProvider olMessageStore,
-                IOlClaimCheckService olClaimCheckService)
+                IOlClaimCheckService olClaimCheckService,
+                IFeatureManager featureManager)
         {
             _logger = logger;
             _httpHelper = httpHelper;
@@ -49,6 +53,7 @@ namespace AdbToPurview.Function
             _olFilter = olFilter;
             _olMessageStore = olMessageStore;
             _olClaimCheckService = olClaimCheckService ?? throw new ArgumentNullException(nameof(olClaimCheckService));
+            _featureManager = featureManager ?? throw new ArgumentNullException(nameof(featureManager));
         }
 
         [Function("OpenLineageIn")]
@@ -65,7 +70,8 @@ namespace AdbToPurview.Function
                 _logger.LogInformation($"OpenLineageIn: Processing request...");
 
                 // Validate request headers
-                if (!_httpHelper.ValidateRequestHeaders(req, _configuration["OlSourceHeaderExpectedValue"] ?? Guid.NewGuid().ToString()))
+                if (await _featureManager.IsEnabledAsync(FeatureFlags.Security.ValidateHttpOlSourceHeader) && 
+                    !_httpHelper.ValidateRequestHeaders(req, _configuration["OlSourceHeaderExpectedValue"] ?? Guid.NewGuid().ToString()))
                 {
                     return _httpHelper.CreateUnauthorizedHttpResponse(req);
                 }
