@@ -5,9 +5,10 @@ namespace Function.Domain.Helpers
 {
     public interface IHttpHelper
     {
-         public Task<HttpResponseData> CreateSuccessfulHttpResponse(HttpRequestData req, object data);
-         public HttpResponseData CreateServerErrorHttpResponse(HttpRequestData req);
-         public HttpResponseData CreateUnauthorizedHttpResponse(HttpRequestData req);
-         public bool ValidateRequestHeaders(HttpRequestData req, string sourceHeaderExpectedValue);
+        public Task<HttpResponseData> CreateSuccessfulHttpResponse(HttpRequestData req, object data);
+        public HttpResponseData CreateServerErrorHttpResponse(HttpRequestData req);
+        public Task<HttpResponseData> CreateBadRequestHttpResponse(HttpRequestData req, string message);
+        public HttpResponseData CreateUnauthorizedHttpResponse(HttpRequestData req);
+        public bool ValidateRequestHeaders(HttpRequestData req, string sourceHeaderExpectedValue);
     }
 }

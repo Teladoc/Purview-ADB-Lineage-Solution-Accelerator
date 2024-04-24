@@ -77,7 +77,7 @@ namespace AdbToPurview.Function
                 // Validate body is not empty
                 if (string.IsNullOrEmpty(strRequest))
                 {
-                    throw new Exception("OpenLineageIn: Request is null or empty.");
+                    return await _httpHelper.CreateBadRequestHttpResponse(req, "Request is null or empty.");
                 }
 
                 // Validate body is OpenLineage message

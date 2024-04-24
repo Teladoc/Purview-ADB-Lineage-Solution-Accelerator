@@ -13,6 +13,10 @@
     "PurviewAccountName": "<insert>",
     "ClientID": "<insert>",
     "ClientSecret": "<insert>",
-    "TenantId": "<insert>"
+    "TenantId": "<insert>",
+    "OlSourceHeaderExpectedValue": "<name of synapse instance>",
+    "FeatureManagement:CreateOrUpdateSynapseAsset": "false",
+    "FeatureManagement:ValidateHttpOlSourceHeader": "true",
+    "OlMessageStoreAccountName": "<insert>"
   }
 }

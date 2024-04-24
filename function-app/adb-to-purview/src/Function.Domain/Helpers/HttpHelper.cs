@@ -35,5 +35,14 @@ namespace Function.Domain.Helpers
             }
             return false;
         }
+
+        public async Task<HttpResponseData> CreateBadRequestHttpResponse(HttpRequestData req, string message)
+        {
+            var response = req.CreateResponse(HttpStatusCode.BadRequest);
+            response.Headers.Add("Content-Type", "application/json");
+            await response.WriteStringAsync(System.Text.Json.JsonSerializer.Serialize(new { message }), System.Text.Encoding.UTF8);
+            return response;
+        }
+
     }
 }
