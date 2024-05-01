@@ -14,6 +14,8 @@ using Function.Domain.Providers;
 using Function.Domain.Helpers.Logging;
 using Function.Domain.Models.Messaging;
 using Newtonsoft.Json;
+using Microsoft.FeatureManagement;
+using Function.Domain.Constants;
 
 
 namespace AdbToPurview.Function
@@ -33,6 +35,7 @@ namespace AdbToPurview.Function
         private IOlFilter _olFilter;
         private readonly IOlClaimCheckService _olClaimCheckService;
         private readonly IOlMessageProvider _olMessageStore;
+        private readonly IFeatureManager _featureManager;
 
         public OpenLineageIn(
                 ILogger<OpenLineageIn> logger,
@@ -40,7 +43,8 @@ namespace AdbToPurview.Function
                 IConfiguration configuration,
                 IOlFilter olFilter,
                 IOlMessageProvider olMessageStore,
-                IOlClaimCheckService olClaimCheckService)
+                IOlClaimCheckService olClaimCheckService,
+                IFeatureManager featureManager)
         {
             _logger = logger;
             _httpHelper = httpHelper;
@@ -49,12 +53,13 @@ namespace AdbToPurview.Function
             _olFilter = olFilter;
             _olMessageStore = olMessageStore;
             _olClaimCheckService = olClaimCheckService ?? throw new ArgumentNullException(nameof(olClaimCheckService));
+            _featureManager = featureManager ?? throw new ArgumentNullException(nameof(featureManager));
         }
 
         [Function("OpenLineageIn")]
         public async Task<HttpResponseData> Run(
             [HttpTrigger(
-                AuthorizationLevel.Function,
+                AuthorizationLevel.Anonymous,
                 "get",
                 "post",
                 Route = "v1/lineage"
@@ -63,15 +68,25 @@ namespace AdbToPurview.Function
             try
             {
                 _logger.LogInformation($"OpenLineageIn: Processing request...");
-                // send event data to EventHub
-                var events = new List<EventData>();
 
-                var strRequest = await req.ReadAsStringAsync();
-                if (string.IsNullOrEmpty(strRequest))
+                // Validate request headers
+                if (await _featureManager.IsEnabledAsync(FeatureFlags.Security.ValidateHttpOlSourceHeader) && 
+                    !_httpHelper.ValidateRequestHeaders(req, _configuration["OlSourceHeaderExpectedValue"] ?? Guid.NewGuid().ToString()))
                 {
-                    throw new Exception("OpenLineageIn: Request is null or empty.");
+                    return _httpHelper.CreateUnauthorizedHttpResponse(req);
                 }
 
+                // send event data to EventHub
+                var events = new List<EventData>();
+                var strRequest = await req.ReadAsStringAsync();
+
+                // Validate body is not empty
+                if (string.IsNullOrEmpty(strRequest))
+                {
+                    return await _httpHelper.CreateBadRequestHttpResponse(req, "Request is null or empty.");
+                }
+
+                // Validate body is OpenLineage message
                 if (_olFilter.FilterOlMessage(strRequest))
                 {
                     _logger.LogInformation($"OpenLineageIn: Request passed validation.");
